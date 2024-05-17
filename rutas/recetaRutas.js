@@ -1,6 +1,8 @@
 const express = require('express');
 const rutas = express.Router();
 const RecetaModel = require('../models/Receta');
+const UsuarioModel = require('../models/Usuario');
+
 
 //endpoint 1.  traer todas las recetas
 rutas.get('/getRecetas', async (req, res) => {
@@ -13,10 +15,12 @@ rutas.get('/getRecetas', async (req, res) => {
 });
 //endpoint 2. Crear
 rutas.post('/crear', async (req, res) => {
+
     const receta = new RecetaModel({
         nombre: req.body.nombre,
         ingredientes: req.body.ingredientes,
-        porciones: req.body.porciones
+        porciones: req.body.porciones,
+        usuario: req.body.usuario // asignar el id del usuario
     })
     try {
         const nuevaReceta = await receta.save();
@@ -37,7 +41,7 @@ rutas.put('/editar/:id', async (req, res) => {
     } catch (error) {
         res.status(400).json({ mensaje :  error.message})
     }
-})
+});
 //ENDPOINT 4. eliminar
 rutas.delete('/eliminar/:id',async (req, res) => {
     try {
@@ -119,5 +123,22 @@ rutas.get('/norbertoQuispe/:ingrediente', async (req, res) => {
         res.status(500).json({ mensaje :  error.message})
     }
 });
+
+//REPORTES 1
+rutas.get('/recetaPorUsuario/:usuarioId', async (peticion, respuesta) =>{
+    const {usuarioId} = peticion.params;
+    console.log(usuarioId);
+    try{
+        const usuario = await UsuarioModel.findById(usuarioId);
+        if (!usuario)
+            return respuesta.status(404).json({mensaje: 'usuario no encontrado'});
+        const recetas = await RecetaModel.find({ usuario: usuarioId}).populate('usuario');
+        respuesta.json(recetas);
+
+    } catch(error){
+        respuesta.status(500).json({ mensaje :  error.message})
+    }
+})
+
 
 module.exports = rutas;
